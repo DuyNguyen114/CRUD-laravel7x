@@ -1,76 +1,142 @@
-@extends("backend.layouts.main")
-@section("title"," tạo mới sản phẩm")
-@section("content")
-<h1> Tạo mới sản phẩm</h1>
-@if($errors->any()){
-<div class="alert alert-danger">
-	<ul>
-		@foreach($errors->all() as $error)
-			<li>{{$error}}</li>
-		@endforeach
-	</ul>
-</div>
+@extends('backend.layouts.main')
+@section('title','Trang sản phẩm')
+@section('content')
+  
+  <h4>Danh sách sản phẩm</h4>
+  <div style="padding: 20px; border: 1px solid #4e73df;margin-bottom: 10px">
+   <form name="search_product" method="get" action="{{ htmlspecialchars($_SERVER["REQUEST_URI"]) }}" class="form-inline">
+       <input name="product_name" value="{{ $searchKeyword }}" class="form-control" style="width: 350px; margin-right: 20px" placeholder="Nhập tên sản phẩm bạn muốn tìm kiếm ..." autocomplete="off">
+        <select name="product_status" class="form-control" style="width: 150px; margin-right: 20px">
+           <option value="">Lọc theo trạng thái</option>
+           <option value="1" {{ $productStatus == 1 ? " selected" : "" }}>Đang mở bán</option>
+           <option value="2" {{ $productStatus == 2 ? " selected" : "" }}>Ngừng bán</option>
+        </select>
+        <select name="product_sort" class="form-control" style="">
+            <option value="">Sắp xếp</option>
+            <option value="price_asc" {{ $sort == "price_asc" ? " selected" : "" }}>Giá tăng dần</option>
+            <option value="price_desc" {{ $sort == "price_desc" ? " selected" : "" }}>Giá giảm dần</option>
+            <option value="quantity_asc" {{ $sort == "quantity_asc" ? " selected" : "" }}>Tồn kho tăng dần</option>
+            <option value="quantity_desc" {{ $sort == "quantity_desc" ? " selected" : "" }}>Tồn kho giản dần</option>
+        </select>
+        <div>
+           <input type="submit" name="search" class="btn btn-success ml-4" value="Lọc kết quả">
+       </div>
+       <div style="padding:10px 0px">
+           <a href="#" id="clear-search" class="btn btn-warning ml-2">Clear filter</a>
+       </div>
+       <input type="hidden" name="page" value="1">
+   </form>
+  </div>
+   {{ $products->links() }}
+  @if(session('status'))
+     <div class="alert alert-info">
+         {{ session('status') }}
+     </div>
+  @endif
+  <a class="btn btn-primary mt-4" href="{{ url('/sanpham/create') }}">Thêm sản phẩm</a>
+  <table class="table table-bordered mt-4" id="dataTable" width="100%" cellspacing="0">
+<thead>
+    <tr>
+        <th>ID</th>
+        <th>Ảnh đại diện</th>
+        <th>Tên sản phẩm</th>
+        <th>Giá sản phẩm</th>
+        <th>Tồn kho</th>
+        <th>Hành động</th>
+    </tr>
+</thead>
+<tfoot>
+    <tr>
+        <th>ID</th>
+        <th>Ảnh đại diện</th>
+        <th>Tên sản phẩm</th>
+        <th>Giá sản phẩm</th>
+        <th>Tồn kho</th>
+        <th>Hành động</th>
+    </tr>
+</tfoot>
+<tbody>
+    @if(isset($products) && !empty($products))
+       @foreach($products as $product)
+    <tr>
+        <td>{{ $product->id }}</td>
+        <td>
+            @if($product->product_image)
+               <?php 
+                   $product->product_image = str_replace("public","",$product->product_image);
+                ?>
+                <div>
+                    <img src="{{ asset("storage/$product->product_image") }}" width="100px" height="auto">
+                </div>
+            @endif
+        </td>
+        <td>
+            {{ $product->product_name }}
 
-}
-@endif	
-<form name="product" action="{{ url("/backend/product/store")}}" method="post">
-	@csrf
-    <div class="form-group">
-      <label for="product_name">Tên sản phẩm:</label>
-      <input type="text" class="form-control" id="product_name" placeholder="Nhập tên sản phẩm" name="product_name">
-    </div>
-    <div class="form-group">
-      <label for="product_image">ảnh sản phẩm:</label>
-      <input type="file" class="form-control" id="product_image" name="product_image">
-    </div>
-	<div class="form-group">
-		<label for="product_descrip">Mô tả sản phẩm</label>
-		<textarea name="product_desc" class="form-control" id="product_desc" cols="30" rows="10">
-
-		</textarea>
-	</div>
-	<div class="form-group">
-		<label for="product_publish"> Thời gian mở bán sản phẩm</label>
-		<input type="text" name="product_publish" style="width: 250px;" class="form-control" id="product_publish">
-	</div>
-	<div class="form-group">
-		<label for="product_quantity">Tồn kho sản phẩm</label>
-		<input type="number" name="product_quantity" style="width: 250px;" class="form-control" id="product_quantity">
-	</div>
-	<div class="form-group">
-		<label for="product_price">Nhập giá sản phẩm</label>
-		<input type="product_price" name="product_price" id="product_price" class="form-control" style="width: 250px;">
-	</div>
-    <button type="submit" class="btn btn-success">Thêm sản phẩm</button>
-  </form>
+            @if($product->product_status == 1)
+               <p><span class="bg-success text-white">Đang bán</span></p>
+            @endif
+            @if($product->product_status == 2)
+               <p><span class="bg-success text-white">Dừng bán</span></p>
+            @endif
+        </td>
+        <td>{{ $product->product_price }}</td>
+        <td>{{ $product->product_quantity }}</td>
+        <td>
+            <a href="{{ url("/sanpham/edit/$product->id") }}" class="btn btn-outline-warning">Sửa</a>
+            <a href="{{ url("/sanpham/delete/$product->id") }}" class="btn btn-outline-danger">Xóa</a>
+        </td>
+    </tr>
+       @endforeach  
+    @else
+      Chưa có bản ghi nào trong bảng này
+    @endif
+</tbody>
+</table>
+  {{ $products->links() }}
 @endsection
-@section("appendjs")
-<link rel="stylesheet" href="{{ asset("/be-assets/js/bootstrap-datetimepicker.min.css") }}" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js" type="text/javascript"></script>
-<script src="{{ asset("/be-assets/js/bootstrap-datetimepicker.min.js") }}"></script>
+@section('appendjs')
 <script type="text/javascript">
-	// định dạng thời gian là YYYY-MM-DD HH:mm:ss
-   $(function () {
-       $('#product_publish').datetimepicker({
-       	format:"YYYY-MM-DD HH:mm:ss",
-       	icons: {
-			   time: 'far fa-clock',
-			   date: 'far fa-calendar',
-			   up: 'fas fa-arrow-up',
-			   down: 'fas fa-arrow-down',
-			   previous: 'fas fa-chevron-left',
-			   next: 'fas fa-chevron-right',
-			   today: 'fas fa-calendar-check',
-			   clear: 'far fa-trash-alt',
-			   close: 'far fa-times-circle'
-			}
+   $(document).ready(function () {
+       $("#clear-search").on("click", function (e) {
+           e.preventDefault();
+           $("input[name='product_name']").val('');
+           $("select[name='product_status']").val('');
+           $("select[name='product_sort']").val('');
+           $("form[name='search_product']").trigger("submit");
        });
-   });
-</script>
-<script src="{{ asset("/be-assets/js/tinymce/tinymce.min.js") }}"></script>
-<script>
-   tinymce.init({
-       selector: '#product_desc'
+       $("a.page-link").on("click", function (e) {
+           e.preventDefault();
+           var rel = $(this).attr("rel");
+           if (rel == "next") {
+
+               var page = $("body").find(".page-item.active > .page-link").eq(0).text();
+
+               console.log(" : " + page);
+
+               page = parseInt(page);
+
+               page += 1;
+
+           } else if(rel == "prev") {
+
+               var page = $("body").find(".page-item.active > .page-link").eq(0).text();
+
+               console.log(page);
+
+               page = parseInt(page);
+
+               page -= 1;
+
+           } else {
+
+               var page = $(this).text();
+           }
+           console.log(page);
+           page = parseInt(page);
+           $("input[name='page']").val(page);
+           $("form[name='search_product']").trigger("submit");
+       });
    });
 </script>
 @endsection
